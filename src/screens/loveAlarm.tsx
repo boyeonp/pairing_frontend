@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Animated, SafeAreaView, Easing } from 'react-native';
+import { View, Text, StyleSheet, Animated, SafeAreaView, Easing, TouchableOpacity } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -50,7 +50,7 @@ const PulsatingCircle = ({ delay, size, duration, finalOpacity }: { delay: numbe
   );
 };
 
-const LoveAlarmScreen = () => {
+const LoveAlarmScreen = ({ navigation }: { navigation: any }) => {
   const [likes, setLikes] = useState(0);
 
   useEffect(() => {
@@ -61,17 +61,16 @@ const LoveAlarmScreen = () => {
   }, []);
 
   return (
-    <LinearGradient colors={['#6fe5fc', '#F8BBD0']} locations={[0.1, 0.9]} style={styles.container}>
+    <LinearGradient colors={['#fbc2eb', '#a6c1ee']} locations={[0.1, 0.9]} style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <Icon name="person-outline" size={28} color="#fff" />
-          <Text style={styles.headerTitle}>LoveAlarm</Text>
-          <View>
-            <Icon name="heart-outline" size={28} color="#fff" />
-            <View style={styles.notificationBadge}>
-              <Text style={styles.notificationText}>1</Text>
+          <View style={{ width: 28 }} />
+          <View />
+          <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+            <View style={styles.profileIconContainer}>
+              <Icon name="person-outline" size={28} color="#fff" />
             </View>
-          </View>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.mainContent}>
@@ -90,7 +89,6 @@ const LoveAlarmScreen = () => {
           </View>
 
           <Text style={styles.likesCount}>{likes}</Text>
-          <Text style={styles.heartId}>Heart ID : 123456789</Text>
         </View>
 
         <View style={styles.footer}>
@@ -118,7 +116,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 10,
+    paddingTop: 20,
+  },
+  profileIconContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 20,
+    padding: 5,
   },
   headerTitle: {
     color: '#fff',
@@ -165,11 +168,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
     marginTop: 20,
-  },
-  heartId: {
-    fontSize: 16,
-    color: '#fff',
-    marginTop: 10,
   },
   footer: {
     alignItems: 'center',

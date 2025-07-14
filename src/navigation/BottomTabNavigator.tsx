@@ -1,7 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import TopTabNavigator from './TopTabNavigator';
-import SettingsScreen from '../screens/settings';
+import MapScreen from '../screens/map';
 import LoveAlarmScreen from '../screens/loveAlarm';
 import Icon from 'react-native-vector-icons/Ionicons';
 
@@ -16,8 +16,8 @@ export default function BottomTabNavigator() {
 
           if (route.name === 'Love Alarm') {
             iconName = focused ? 'heart' : 'heart-outline';
-          } else if (route.name === 'Settings') {
-            iconName = focused ? 'settings' : 'settings-outline';
+          } else if (route.name === 'Map') {
+            iconName = focused ? 'map' : 'map-outline';
           } else if (route.name === 'Pairing') {
             iconName = focused ? 'people' : 'people-outline';
           }
@@ -30,7 +30,7 @@ export default function BottomTabNavigator() {
       })}
     >
       <Tab.Screen name="Love Alarm" component={LoveAlarmScreen} />
-      <Tab.Screen name="Settings" component={SettingsScreen} />
+      <Tab.Screen name="Map" component={MapScreen} />
       <Tab.Screen name="Pairing" component={TopTabNavigator} />
     </Tab.Navigator>
   );
