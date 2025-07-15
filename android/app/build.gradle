@@ -1,8 +1,8 @@
 import java.util.Properties
 
-val properties = Properties()
+def properties = new Properties()
 if (rootProject.file("local.properties").exists()) {
-    properties.load(rootProject.file("local.properties").inputStream())
+    properties.load(rootProject.file("local.properties").newInputStream())
 }
 
 
@@ -94,7 +94,7 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
-        buildConfigField "String", "GOOGLE_MAP_API_KEY", properties.getProperty("google_map_api_key")
+        manifestPlaceholders = [GOOGLE_MAP_API_KEY: properties.getProperty("google_map_api_key", "")]
     }
     signingConfigs {
         debug {
