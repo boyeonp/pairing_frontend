@@ -1,6 +1,6 @@
 import java.util.Properties
 
-val properties = Properties()
+val properties = new Properties()
 if (rootProject.file("local.properties").exists()) {
     properties.load(rootProject.file("local.properties").inputStream())
 }
