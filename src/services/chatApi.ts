@@ -3,8 +3,8 @@ import axios from 'axios';
 const API_URL = 'http://172.20.12.170';
 
 export interface CreateMessageDto {
-  text: string;
-  userId: string;
+  message: string;
+  senderId: string;
   chatroomId: string;
 }
 

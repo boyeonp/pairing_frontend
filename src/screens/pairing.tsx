@@ -13,10 +13,13 @@ import {
   Dimensions,
   Alert,
 } from 'react-native';
-import { useRoute } from '@react-navigation/native';
+import { useRoute, useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import LinearGradient from 'react-native-linear-gradient';
 import { findUserByName, updateUser } from '../services/userApi';
 import Svg, { Path, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
+import io from 'socket.io-client';
+import { TopTabParamList } from '../navigation/TopTabNavigator';
 
 const { width } = Dimensions.get('window');
 const heartSize = width * 0.6;
@@ -40,9 +43,46 @@ export default function PairingScreen() {
   const [name, setName] = useState<string>('');
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
+  const [matchStatus, setMatchStatus] = useState<string>('');
   const scale = useRef(new Animated.Value(1)).current;
   const route = useRoute();
+  const navigation = useNavigation<StackNavigationProp<TopTabParamList, 'Pairing'>>();
   const user = (route.params as { user?: any })?.user;
+  const socket = useRef<any>(null);
+
+  useEffect(() => {
+    if (user) {
+      socket.current = io('http://localhost:3000', {
+        query: { userId: user.id },
+      });
+
+      socket.current.on('matchFound', (match: any) => {
+        Alert.alert('Match Found!', `You have a match with ${match.user2.username}`, [
+          { text: 'OK', onPress: () => navigation.navigate('Chat', { user, chatroomId: match.id }) },
+        ]);
+      });
+
+      return () => {
+        socket.current.disconnect();
+      };
+    }
+  }, [user]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout | undefined;
+    if (isAnimating) {
+      interval = setInterval(() => {
+        if (socket.current && user) {
+          socket.current.emit('checkForMatch', user.id);
+        }
+      }, 1000);
+    }
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [isAnimating, user]);
 
   useEffect(() => {
     let loop: Animated.CompositeAnimation | undefined;
@@ -82,6 +122,7 @@ export default function PairingScreen() {
           }
           await updateUser(user.id, { love: lovedUser.id });
           setIsAnimating(true);
+          setMatchStatus('Searching for a match...');
           Alert.alert('Success', 'Your love has been recorded.');
         } else {
           Alert.alert('Error', 'User not found.');
@@ -92,6 +133,7 @@ export default function PairingScreen() {
       }
     } else {
       setIsAnimating(false);
+      setMatchStatus('');
     }
   };
 
@@ -106,6 +148,8 @@ export default function PairingScreen() {
       <Text style={styles.caption}>
         {name.trim() ? '당신의 인연을 기다리세요' : '좋아하는 사람을 입력하세요.'}
       </Text>
+
+      {isAnimating && <Text style={styles.status}>{matchStatus}</Text>}
 
       <Modal
         animationType="fade"
@@ -178,5 +222,10 @@ const styles = StyleSheet.create({
   },
   buttonRow: {
     alignSelf: 'flex-end',
+  },
+  status: {
+    marginTop: 20,
+    fontSize: 16,
+    color: '#E91E63',
   },
 });

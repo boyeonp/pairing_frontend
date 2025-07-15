@@ -3,12 +3,15 @@ import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity } from 'r
 import Icon from 'react-native-vector-icons/Ionicons';
 import { getMessages, sendMessage } from '../services/chatApi';
 import { Message } from '../models/message';
+import { useRoute } from '@react-navigation/native';
 
 export default function ChatScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [timeLeft, setTimeLeft] = useState(24 * 60 * 60);
   const [hasMatch, setHasMatch] = useState(true);
+  const route = useRoute();
+  const { user, chatroomId } = route.params as { user: any; chatroomId: string };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -18,9 +21,10 @@ export default function ChatScreen() {
     // Fetch initial messages
     const fetchMessages = async () => {
       try {
-        // Replace '1' with the actual chatroomId
-        const fetchedMessages = await getMessages('1');
-        setMessages(fetchedMessages);
+        if (chatroomId) {
+          const fetchedMessages = await getMessages(chatroomId);
+          setMessages(fetchedMessages);
+        }
       } catch (error) {
         console.error('Failed to fetch messages:', error);
       }
@@ -29,7 +33,7 @@ export default function ChatScreen() {
     fetchMessages();
 
     return () => clearInterval(timer);
-  }, []);
+  }, [chatroomId]);
 
   const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
@@ -39,12 +43,11 @@ export default function ChatScreen() {
   };
 
   const handleSend = async () => {
-    if (inputText.trim().length > 0) {
-      // Replace with actual userId and chatroomId
+    if (inputText.trim().length > 0 && user && chatroomId) {
       const newMessage = {
-        text: inputText,
-        userId: '1', 
-        chatroomId: '1',
+        message: inputText,
+        senderId: user.id,
+        chatroomId: chatroomId,
       };
       try {
         const sentMessage = await sendMessage(newMessage);
@@ -63,8 +66,7 @@ export default function ChatScreen() {
   };
 
   const renderMessage = ({ item, index }: { item: Message, index: number }) => {
-    // Replace 1 with the actual current userId
-    const isMe = item.user.id === 1; 
+    const isMe = item.user.id === user.id;
     return (
       <View style={[styles.messageContainer, isMe ? styles.myMessageContainer : styles.otherMessageContainer]}>
         {isMe && (
