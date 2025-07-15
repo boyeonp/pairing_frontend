@@ -13,10 +13,10 @@ import {
   Dimensions,
   Alert,
 } from 'react-native';
+import { useRoute } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import { findUserByName, updateUser } from '../services/userApi';
 import Svg, { Path, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 const heartSize = width * 0.6;
@@ -40,18 +40,9 @@ export default function PairingScreen() {
   const [name, setName] = useState<string>('');
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
-  const [user, setUser] = useState<any>(null);
   const scale = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      const storedUser = await AsyncStorage.getItem('user');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
-      }
-    };
-    fetchUser();
-  }, []);
+  const route = useRoute();
+  const user = (route.params as { user?: any })?.user;
 
   useEffect(() => {
     let loop: Animated.CompositeAnimation | undefined;
@@ -82,13 +73,13 @@ export default function PairingScreen() {
   const handleSaveName = async () => {
     setModalVisible(false);
     if (name.trim().length > 0) {
-      if (!user) {
-        Alert.alert('Error', 'You must be logged in to perform this action.');
-        return;
-      }
       try {
         const lovedUser = await findUserByName(name.trim());
         if (lovedUser) {
+          if (!user || !user.id) {
+            Alert.alert('Error', 'Could not find current user. Please log in again.');
+            return;
+          }
           await updateUser(user.id, { love: lovedUser.id });
           setIsAnimating(true);
           Alert.alert('Success', 'Your love has been recorded.');
