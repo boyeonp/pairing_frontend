@@ -1,15 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 
-export default function ProfileScreen({ navigation }: { navigation: any }) {
-  // Dummy data for now
-  const userData = {
-    name: 'Jin',
-    mbti: 'INFP',
-    firstMessage: '다음 주에 같이 영화보러 가실래요?',
-  };
+export default function ProfileScreen({ route, navigation }: { route: any, navigation: any }) {
+  const { user } = route.params;
 
   return (
     <View style={styles.container}>
@@ -18,17 +12,25 @@ export default function ProfileScreen({ navigation }: { navigation: any }) {
       </TouchableOpacity>
       <View style={styles.profileContainer}>
         <View style={styles.avatarContainer}>
-          <Icon name="person" size={80} color="#fff" />
+          <Text style={styles.emoji}>{user.profileEmoji || '😊'}</Text>
         </View>
-        <Text style={styles.name}>{userData.name}</Text>
-        <Text style={styles.mbti}>{userData.mbti}</Text>
+        <Text style={styles.name}>{user.username}</Text>
+        <Text style={styles.mbti}>Age: {user.age} | Class: {user.class}</Text>
       </View>
       <View style={styles.infoContainer}>
-        <Text style={styles.infoLabel}>페어링 시 첫 메세지</Text>
-        <Text style={styles.infoValue}>{userData.firstMessage}</Text>
+        <Text style={styles.infoLabel}>Email</Text>
+        <Text style={styles.infoValue}>{user.email}</Text>
+      </View>
+      <View style={styles.infoContainer}>
+        <Text style={styles.infoLabel}>Comment</Text>
+        <Text style={styles.infoValue}>{user.comment || 'No comment yet.'}</Text>
+      </View>
+      <View style={styles.infoContainer}>
+        <Text style={styles.infoLabel}>Love</Text>
+        <Text style={styles.infoValue}>{user.love}</Text>
       </View>
       <TouchableOpacity style={styles.button}>
-        <Text style={styles.buttonText}>비밀번호 변경</Text>
+        <Text style={styles.buttonText}>Edit Profile</Text>
       </TouchableOpacity>
     </View>
   );
@@ -59,6 +61,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
+  },
+  emoji: {
+    fontSize: 80,
   },
   name: {
     fontSize: 28,

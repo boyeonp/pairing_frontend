@@ -7,7 +7,9 @@ import Icon from 'react-native-vector-icons/Ionicons';
 
 const Tab = createBottomTabNavigator();
 
-export default function BottomTabNavigator() {
+export default function BottomTabNavigator({ route }: { route: any }) {
+  const { user } = route.params;
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -29,9 +31,9 @@ export default function BottomTabNavigator() {
         headerTitle: '',
       })}
     >
-      <Tab.Screen name="Love Alarm" component={LoveAlarmScreen} />
-      <Tab.Screen name="Map" component={MapScreen} />
-      <Tab.Screen name="Pairing" component={TopTabNavigator} />
+      <Tab.Screen name="Love Alarm" component={LoveAlarmScreen} initialParams={{ user }} />
+      <Tab.Screen name="Map" component={MapScreen} initialParams={{ user }} />
+      <Tab.Screen name="Pairing" component={TopTabNavigator} initialParams={{ user }} />
     </Tab.Navigator>
   );
 }
