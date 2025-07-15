@@ -13,6 +13,7 @@ import {
   Dimensions,
   Alert,
 } from 'react-native';
+import { useRoute } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import { findUserByName, updateUser } from '../services/userApi';
 import Svg, { Path, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
@@ -40,6 +41,8 @@ export default function PairingScreen() {
   const [isAnimating, setIsAnimating] = useState<boolean>(false);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const scale = useRef(new Animated.Value(1)).current;
+  const route = useRoute();
+  const user = (route.params as { user?: any })?.user;
 
   useEffect(() => {
     let loop: Animated.CompositeAnimation | undefined;
@@ -73,8 +76,11 @@ export default function PairingScreen() {
       try {
         const lovedUser = await findUserByName(name.trim());
         if (lovedUser) {
-          // Replace 1 with the actual current user's ID
-          await updateUser(1, { love: lovedUser.id });
+          if (!user || !user.id) {
+            Alert.alert('Error', 'Could not find current user. Please log in again.');
+            return;
+          }
+          await updateUser(user.id, { love: lovedUser.id });
           setIsAnimating(true);
           Alert.alert('Success', 'Your love has been recorded.');
         } else {
