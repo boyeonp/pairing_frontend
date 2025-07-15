@@ -1,8 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Animated, SafeAreaView, Easing, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Animated, SafeAreaView, Easing, TouchableOpacity, PermissionsAndroid, Platform, Alert } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
 import Icon from 'react-native-vector-icons/Ionicons';
+import Geolocation from 'react-native-geolocation-service';
+import { getLoveAlarmCount } from '../services/userApi';
+import { useRoute } from '@react-navigation/native';
 
 const heartSize = 100;
 
@@ -52,13 +55,66 @@ const PulsatingCircle = ({ delay, size, duration, finalOpacity }: { delay: numbe
 
 const LoveAlarmScreen = ({ navigation }: { navigation: any }) => {
   const [likes, setLikes] = useState(0);
+  const route = useRoute();
+  const user = (route.params as { user?: any })?.user;
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setLikes(prev => (prev < 10 ? prev + 1 : 10));
-    }, 2000);
-    return () => clearInterval(interval);
-  }, []);
+  const handleFindCrushes = () => {
+    const requestLocationPermission = async () => {
+      if (Platform.OS === 'android') {
+        try {
+          const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+            {
+              title: 'Location Permission',
+              message: 'This app needs access to your location to find nearby users.',
+              buttonNeutral: 'Ask Me Later',
+              buttonNegative: 'Cancel',
+              buttonPositive: 'OK',
+            },
+          );
+          if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+            console.log('You can use the location');
+            getLocation();
+          } else {
+            console.log('Location permission denied');
+            Alert.alert("Location permission denied");
+          }
+        } catch (err) {
+          console.warn(err);
+        }
+      } else {
+        // iOS permission request logic can be added here
+        getLocation();
+      }
+    };
+
+    requestLocationPermission();
+  };
+
+  const getLocation = () => {
+    Geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          if (!user || !user.id) {
+            Alert.alert("Error", "User not found. Please log in again.");
+            return;
+          }
+          const data = await getLoveAlarmCount(user.id, {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+          setLikes(data.crushCount);
+        } catch (error) {
+          Alert.alert("API Error", "Could not fetch love alarm count.");
+        }
+      },
+      (error) => {
+        console.log(error.code, error.message);
+        Alert.alert("Could not get location", error.message);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+    );
+  };
 
   return (
     <LinearGradient colors={['#fbc2eb', '#a6c1ee']} locations={[0.1, 0.9]} style={styles.container}>
@@ -74,7 +130,7 @@ const LoveAlarmScreen = ({ navigation }: { navigation: any }) => {
         </View>
 
         <View style={styles.mainContent}>
-          <View style={styles.gpsContainer}>
+          <TouchableOpacity onPress={handleFindCrushes} style={styles.gpsContainer}>
             <PulsatingCircle delay={0} size={heartSize * 2} duration={3000} finalOpacity={0.5} />
             <PulsatingCircle delay={1000} size={heartSize * 3} duration={3000} finalOpacity={0.4} />
             <PulsatingCircle delay={2000} size={heartSize * 4} duration={3000} finalOpacity={0.3} />
@@ -86,9 +142,10 @@ const LoveAlarmScreen = ({ navigation }: { navigation: any }) => {
                 />
               </Svg>
             </View>
-          </View>
+          </TouchableOpacity>
 
           <Text style={styles.likesCount}>{likes}</Text>
+          <Text style={styles.instructionText}>하트를 눌러 주변의 인연을 찾아보세요</Text>
         </View>
 
         <View style={styles.footer}>
@@ -168,6 +225,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
     marginTop: 20,
+  },
+  instructionText: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 16,
+    marginTop: 10,
+    fontWeight: 'bold',
   },
   footer: {
     alignItems: 'center',
