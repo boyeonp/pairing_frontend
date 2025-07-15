@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://172.20.12.170';
+const API_URL = 'http://172.20.12.170:80';
 
 export const findUserByName = async (name: string) => {
   try {

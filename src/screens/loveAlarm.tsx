@@ -6,6 +6,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import Geolocation from 'react-native-geolocation-service';
 import { getLoveAlarmCount } from '../services/userApi';
 import { useRoute } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const heartSize = 100;
 
@@ -55,8 +56,17 @@ const PulsatingCircle = ({ delay, size, duration, finalOpacity }: { delay: numbe
 
 const LoveAlarmScreen = ({ navigation }: { navigation: any }) => {
   const [likes, setLikes] = useState(0);
-  const route = useRoute();
-  const user = (route.params as { user?: any })?.user;
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const storedUser = await AsyncStorage.getItem('user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    };
+    fetchUser();
+  }, []);
 
   const handleFindCrushes = () => {
     const requestLocationPermission = async () => {
