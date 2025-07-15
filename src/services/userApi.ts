@@ -12,7 +12,7 @@ export const findUserByName = async (name: string) => {
   }
 };
 
-export const updateUser = async (id: number, data: { love: number }) => {
+export const updateUser = async (id: number, data: { love?: number; email?: string; comment?: string; profileEmoji?: string }) => {
   try {
     const response = await axios.patch(`${API_URL}/user/${id}`, data);
     return response.data;
