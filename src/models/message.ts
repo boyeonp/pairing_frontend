@@ -1,9 +1,8 @@
-import { ChatRoom } from './chatRoom';
+import { User } from './user';
 
 export interface Message {
-  id: string;                 // UUID
-  chatId: ChatRoom['id'];
-  senderId: number;
-  message: string;
-  created_at: string;
+  id: string;
+  text: string;
+  createdAt: string;
+  user: User;
 }

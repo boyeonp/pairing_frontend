@@ -1,30 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
-
-interface Message {
-  id: string;
-  text: string;
-  time: string;
-  sender: 'me' | 'other';
-  read: boolean;
-}
-
-const initialMessages: Message[] = [
-  { id: '1', text: 'Hey! How are you?', time: '10:00 AM', sender: 'other', read: true },
-  { id: '2', text: 'I am good, thanks! How about you?', time: '10:01 AM', sender: 'me', read: true },
-];
+import { getMessages, sendMessage } from '../services/chatApi';
+import { Message } from '../models/message';
 
 export default function ChatScreen() {
-  const [messages, setMessages] = useState(initialMessages);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [timeLeft, setTimeLeft] = useState(24 * 60 * 60);
-  const [hasMatch, setHasMatch] = useState(false);
+  const [hasMatch, setHasMatch] = useState(true);
 
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(prevTime => (prevTime > 0 ? prevTime - 1 : 0));
     }, 1000);
+
+    // Fetch initial messages
+    const fetchMessages = async () => {
+      try {
+        // Replace '1' with the actual chatroomId
+        const fetchedMessages = await getMessages('1');
+        setMessages(fetchedMessages);
+      } catch (error) {
+        console.error('Failed to fetch messages:', error);
+      }
+    };
+
+    fetchMessages();
 
     return () => clearInterval(timer);
   }, []);
@@ -36,44 +38,51 @@ export default function ChatScreen() {
     return `${h}:${m}:${s}`;
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (inputText.trim().length > 0) {
-      const newMessage: Message = {
-        id: (messages.length + 1).toString(),
+      // Replace with actual userId and chatroomId
+      const newMessage = {
         text: inputText,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        sender: 'me',
-        read: false,
+        userId: '1', 
+        chatroomId: '1',
       };
-      setMessages([...messages, newMessage]);
-      setInputText('');
+      try {
+        const sentMessage = await sendMessage(newMessage);
+        setMessages(prevMessages => [...prevMessages, sentMessage]);
+        setInputText('');
+      } catch (error) {
+        console.error('Failed to send message:', error);
+      }
     }
   };
 
   const shouldShowTime = (item: Message, index: number) => {
     if (index === 0) return true;
     const prevMessage = messages[index - 1];
-    return item.time !== prevMessage.time || item.sender !== prevMessage.sender;
+    return new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) !== new Date(prevMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || item.user.id !== prevMessage.user.id;
   };
 
-  const renderMessage = ({ item, index }: { item: Message, index: number }) => (
-    <View style={[styles.messageContainer, item.sender === 'me' ? styles.myMessageContainer : styles.otherMessageContainer]}>
-      {item.sender === 'me' && (
-        <View style={styles.messageInfo}>
-          {!item.read && <Text style={styles.readReceipt}>1</Text>}
-          {shouldShowTime(item, index) && <Text style={styles.timeText}>{item.time}</Text>}
+  const renderMessage = ({ item, index }: { item: Message, index: number }) => {
+    // Replace 1 with the actual current userId
+    const isMe = item.user.id === 1; 
+    return (
+      <View style={[styles.messageContainer, isMe ? styles.myMessageContainer : styles.otherMessageContainer]}>
+        {isMe && (
+          <View style={styles.messageInfo}>
+            {shouldShowTime(item, index) && <Text style={styles.timeText}>{new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>}
+          </View>
+        )}
+        <View style={[styles.messageBubble, isMe ? styles.myMessageBubble : styles.otherMessageBubble]}>
+          <Text style={isMe ? styles.myMessageText : styles.otherMessageText}>{item.text}</Text>
         </View>
-      )}
-      <View style={[styles.messageBubble, item.sender === 'me' ? styles.myMessageBubble : styles.otherMessageBubble]}>
-        <Text style={item.sender === 'me' ? styles.myMessageText : styles.otherMessageText}>{item.text}</Text>
+        {!isMe && shouldShowTime(item, index) && (
+          <View style={styles.messageInfo}>
+            <Text style={styles.timeText}>{new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+          </View>
+        )}
       </View>
-      {item.sender === 'other' && shouldShowTime(item, index) && (
-        <View style={styles.messageInfo}>
-          <Text style={styles.timeText}>{item.time}</Text>
-        </View>
-      )}
-    </View>
-  );
+    );
+  };
 
   if (!hasMatch) {
     return (

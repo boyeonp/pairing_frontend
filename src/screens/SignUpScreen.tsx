@@ -7,13 +7,12 @@ const { width } = Dimensions.get('window');
 
 export default function SignUpScreen({ navigation }: { navigation: any }) {
   const [name, setName] = useState('');
-  const [password, setPassword] = useState('');
   const [mbti, setMbti] = useState('');
   const [firstMessage, setFirstMessage] = useState('');
 
   const handleSignUp = () => {
-    // For now, just navigate back to the Welcome screen
-    navigation.navigate('Welcome');
+    // For now, just navigate back to the Main screen
+    navigation.navigate('Main');
   };
 
   return (
@@ -32,14 +31,6 @@ export default function SignUpScreen({ navigation }: { navigation: any }) {
           placeholderTextColor="#fff"
           value={name}
           onChangeText={setName}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="비밀번호"
-          placeholderTextColor="#fff"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
         />
         <TextInput
           style={styles.input}

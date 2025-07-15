@@ -11,8 +11,10 @@ import {
   Animated,
   Platform,
   Dimensions,
+  Alert,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import { findUserByName, updateUser } from '../services/userApi';
 import Svg, { Path, Defs, LinearGradient as SvgGradient, Stop } from 'react-native-svg';
 
 const { width } = Dimensions.get('window');
@@ -65,10 +67,23 @@ export default function PairingScreen() {
     setModalVisible(true);
   };
 
-  const handleSaveName = () => {
+  const handleSaveName = async () => {
     setModalVisible(false);
     if (name.trim().length > 0) {
-      setIsAnimating(true);
+      try {
+        const lovedUser = await findUserByName(name.trim());
+        if (lovedUser) {
+          // Replace 1 with the actual current user's ID
+          await updateUser(1, { love: lovedUser.id });
+          setIsAnimating(true);
+          Alert.alert('Success', 'Your love has been recorded.');
+        } else {
+          Alert.alert('Error', 'User not found.');
+        }
+      } catch (error) {
+        Alert.alert('Error', 'An error occurred while saving your love.');
+        console.error(error);
+      }
     } else {
       setIsAnimating(false);
     }

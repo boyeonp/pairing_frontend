@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import GoogleSignInButton from './android_light_rd_SI.svg';
 
 const { width, height } = Dimensions.get('window');
 
@@ -16,16 +17,9 @@ export default function WelcomeScreen({ navigation }: { navigation: any }) {
       </View>
       <View style={styles.buttonContainer}>
         <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate('Login')}
-        >
-          <Text style={styles.buttonText}>로그인</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.button, styles.signUpButton]}
           onPress={() => navigation.navigate('SignUp')}
         >
-          <Text style={[styles.buttonText, styles.signUpButtonText]}>회원가입</Text>
+          <GoogleSignInButton width={200} height={50} />
         </TouchableOpacity>
       </View>
     </LinearGradient>
@@ -55,25 +49,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   buttonContainer: {
-    paddingBottom: 50,
-    width: '80%',
-  },
-  button: {
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    paddingVertical: 15,
-    borderRadius: 25,
+    paddingBottom: 100,
     alignItems: 'center',
-    marginBottom: 15,
-  },
-  signUpButton: {
-    backgroundColor: '#fff',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  signUpButtonText: {
-    color: '#a6c1ee',
   },
 });
