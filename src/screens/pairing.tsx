@@ -56,7 +56,12 @@ export default function PairingScreen() {
         query: { userId: user.id },
       });
 
+      socket.current.on('connect', () => {
+        console.log('Connected to WebSocket server');
+      });
+
       socket.current.on('matchFound', (match: any) => {
+        console.log('Match found:', match);
         Alert.alert('Match Found!', `You have a match with ${match.user2.username}`, [
           { text: 'OK', onPress: () => navigation.navigate('Chat', { user, chatroomId: match.id }) },
         ]);
