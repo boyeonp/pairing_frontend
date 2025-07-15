@@ -21,3 +21,13 @@ export const updateUser = async (id: number, data: { love: number }) => {
     throw error;
   }
 };
+
+export const getLoveAlarmCount = async (userId: number, location: { latitude: number, longitude: number }) => {
+  try {
+    const response = await axios.post(`${API_URL}/love-alarm`, { userId, location });
+    return response.data;
+  } catch (error) {
+    console.error('Error getting love alarm count:', error);
+    throw error;
+  }
+};
