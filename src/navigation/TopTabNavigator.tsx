@@ -3,8 +3,15 @@ import { createMaterialTopTabNavigator } from '@react-navigation/material-top-ta
 import PairingScreen from '../screens/pairing';
 import ChatScreen from '../screens/chat';
 import ProfileScreen from '../screens/ProfileScreen';
+import { NavigatorScreenParams } from '@react-navigation/native';
 
-const Tab = createMaterialTopTabNavigator();
+export type TopTabParamList = {
+  Pairing: { user: any };
+  Chat: { user: any; chatroomId?: number };
+  Profile: { user: any };
+};
+
+const Tab = createMaterialTopTabNavigator<TopTabParamList>();
 
 export default function TopTabNavigator({ route }: { route: any }) {
   const { user } = route.params;
