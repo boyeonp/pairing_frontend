@@ -73,7 +73,7 @@ export default function PairingScreen() {
       try {
         const lovedUser = await findUserByName(name.trim());
         if (lovedUser) {
-          // Replace 1 with the actual current user's ID
+          // TODO: Replace 1 with the actual current user's ID from auth context
           await updateUser(1, { love: lovedUser.id });
           setIsAnimating(true);
           Alert.alert('Success', 'Your love has been recorded.');

@@ -60,7 +60,7 @@ export default function WelcomeScreen({ navigation }: { navigation: any }) {
   const handleLogin = async () => {
     try {
       const response = await axios.post(`${API_URL}/auth/login`, { email, password });
-      navigation.navigate('MainApp', { user: response.data });
+      navigation.navigate('Main', { user: response.data });
     } catch (error) {
       Alert.alert('Login Failed', 'Invalid credentials');
     }
