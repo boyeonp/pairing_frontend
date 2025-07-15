@@ -9,9 +9,9 @@ export default function ChatScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [timeLeft, setTimeLeft] = useState(24 * 60 * 60);
-  const [hasMatch, setHasMatch] = useState(true);
   const route = useRoute();
   const { user, chatroomId } = route.params as { user: any; chatroomId: string };
+  const hasMatch = !!chatroomId;
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -66,6 +66,9 @@ export default function ChatScreen() {
   };
 
   const renderMessage = ({ item, index }: { item: Message, index: number }) => {
+    if (!user) {
+      return null;
+    }
     const isMe = item.user.id === user.id;
     return (
       <View style={[styles.messageContainer, isMe ? styles.myMessageContainer : styles.otherMessageContainer]}>
@@ -89,7 +92,7 @@ export default function ChatScreen() {
   if (!hasMatch) {
     return (
       <View style={[styles.container, styles.noMatchContainer]}>
-        <Text style={styles.noMatchText}>아직 인연이 없습니다</Text>
+        <Text style={styles.noMatchText}>인연이 아직 도착하지 않았어요</Text>
       </View>
     );
   }
