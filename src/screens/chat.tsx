@@ -14,12 +14,12 @@ export default function ChatScreen() {
   const { user, chatroomId } = route.params as { user: any; chatroomId: string };
   const hasMatch = !!chatroomId;
   const socket = useRef<any>(null);
+  // track lifecycle for intro comment
+  const didFetchRef = useRef(false);     // initial history loaded?
+  const sentCommentRef = useRef(false);  // my comment already sent?
 
   useEffect(() => {
     if (chatroomId && user) {
-      // socket.current = io('http://172.20.12.170:80', {
-      //   query: { userId: user.id, chatroomId: chatroomId },
-      // });
       socket.current = io('http://172.20.12.170:80', {
         query: { userId: user.id },      // no chatroomId here!
         transports: ['websocket'],
@@ -28,10 +28,8 @@ export default function ChatScreen() {
       const doJoin = () => socket.current?.emit('joinRoom', { chatroomId });
 
       if (socket.current.connected) {
-        // transport is being reused → no 'connect' event → call directly
         doJoin();
       } else {
-        // brand‑new transport → wait for handshake
         socket.current.once('connect', doJoin);
       }
 
@@ -55,12 +53,12 @@ export default function ChatScreen() {
       setTimeLeft(prevTime => (prevTime > 0 ? prevTime - 1 : 0));
     }, 1000);
 
-    // Fetch initial messages
     const fetchMessages = async () => {
       try {
         if (chatroomId) {
           const fetchedMessages = await getMessages(chatroomId);
           setMessages(fetchedMessages);
+          didFetchRef.current = true;
         }
       } catch (error) {
         console.error('Failed to fetch messages:', error);
@@ -72,10 +70,49 @@ export default function ChatScreen() {
     return () => clearInterval(timer);
   }, [chatroomId]);
 
+  /* ───── send my profile comment exactly once ───── */
+  useEffect(() => {
+    if (
+      !didFetchRef.current ||          // wait until history loaded
+      sentCommentRef.current ||        // already sent
+      !user?.comment?.trim() ||        // nothing to send
+      !socket.current?.connected       // socket not ready
+    ) {
+      return;
+    }
+
+    // avoid duplicates if the comment somehow already exists
+    // const duplicate = messages.some(
+    //   m =>
+    //     (m.sender?.id ?? m.sender_id) === user.id &&
+    //     m.message === user.comment,
+    // );
+    // if (duplicate) {
+    //   sentCommentRef.current = true;
+    //   return;
+    // }
+
+    (async () => {
+      try {
+        const body = {
+          message: user.comment,
+          chatroomId,
+          senderId: user.id,
+        };
+        const saved = await sendMessage(body);           // persist
+        socket.current.emit('sendMessage', { ...saved, chatroomId }); // broadcast
+        setMessages(prev => [...prev, saved]);           // local UI
+        sentCommentRef.current = true;                   // never resend
+      } catch (err) {
+        console.error('Failed to send intro comment:', err);
+      }
+    })();
+  }, [messages, user, chatroomId]);
+
+
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
-    // messages 길이가 바뀔 때마다 맨 끝으로
     flatListRef.current?.scrollToEnd({ animated: true });
   }, [messages]);
 
