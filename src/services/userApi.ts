@@ -3,7 +3,7 @@ import axios from 'axios';
 const API_URL = 'http://172.20.12.170:80';
 
 export const findUserByName = async (name: string) => {
-  try {
+try {
     const response = await axios.get(`${API_URL}/user/by-name/${name}`);
     return response.data;
   } catch (error) {
@@ -24,8 +24,14 @@ export const updateUser = async (id: number, data: { love?: number; email?: stri
 
 export const getLoveAlarmCount = async (userId: number, location: { latitude: number, longitude: number }) => {
   try {
-    const response = await axios.post(`${API_URL}/love-alarm`, { userId, location });
-    return response.data;
+    const res = await axios.get(`${API_URL}/love-alarm/count`, {
+      params: {
+        userId,
+        lat: location.latitude,
+        lon: location.longitude,
+      },
+    });
+    return res.data;          // { crushCount: number }
   } catch (error) {
     console.error('Error getting love alarm count:', error);
     throw error;
