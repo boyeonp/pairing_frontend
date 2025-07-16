@@ -64,7 +64,10 @@ export default function PairingScreen() {
         console.log('Match found:', match);
         setIsAnimating(false);
         Alert.alert('Match Found!', `You have a match!`, [
-          { text: 'OK', onPress: () => navigation.navigate('Chat', { user, chatroomId: match.id }) },
+          { text: 'OK', onPress: () => {
+            socket.current.disconnect()
+            navigation.navigate('Chat', { user, chatroomId: match.id })
+           } },
         ]);
       });
 

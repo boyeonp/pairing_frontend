@@ -17,16 +17,31 @@ export default function ChatScreen() {
 
   useEffect(() => {
     if (chatroomId && user) {
+      // socket.current = io('http://172.20.12.170:80', {
+      //   query: { userId: user.id, chatroomId: chatroomId },
+      // });
       socket.current = io('http://172.20.12.170:80', {
-        query: { userId: user.id, chatroomId: chatroomId },
+        query: { userId: user.id },      // no chatroomId here!
+        transports: ['websocket'],
       });
 
-      socket.current.on('newMessage', (message: Message) => {
-        const newMessage = normalise(message)
-        console.log('New message received:', message);
-        if (newMessage.sender.id !== user.id) {
-          setMessages(prevMessages => [...prevMessages, newMessage]);
-        }
+      const doJoin = () => socket.current?.emit('joinRoom', { chatroomId });
+
+      if (socket.current.connected) {
+        // transport is being reused → no 'connect' event → call directly
+        doJoin();
+      } else {
+        // brand‑new transport → wait for handshake
+        socket.current.once('connect', doJoin);
+      }
+
+      socket.current.on('newMessage', (raw: any) => {
+        const newMessage = normalise(raw)
+        if (newMessage.sender.id === user.id) return;
+        setMessages(prev =>
+          prev.some(m => m.id === newMessage.id) ? prev         // 이미 있으면 건너뜀
+                                          : [...prev, newMessage]
+        );
       });
 
       return () => {
@@ -57,6 +72,13 @@ export default function ChatScreen() {
     return () => clearInterval(timer);
   }, [chatroomId]);
 
+  const flatListRef = useRef<FlatList>(null);
+
+  useEffect(() => {
+    // messages 길이가 바뀔 때마다 맨 끝으로
+    flatListRef.current?.scrollToEnd({ animated: true });
+  }, [messages]);
+
   const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
     const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
@@ -64,45 +86,27 @@ export default function ChatScreen() {
     return `${h}:${m}:${s}`;
   };
 
-  // const handleSend = async () => {
-  //   if (inputText.trim().length > 0 && user && chatroomId) {
-  //     const newMessage = {
-  //       message: inputText,
-  //       senderId: user.id,
-  //       chatroomId: chatroomId,
-  //     };
-  //     try {
-  //       const sentMessage = await sendMessage(newMessage);
-  //       socket.current.emit('sendMessage', sentMessage);
-  //       setMessages(prevMessages => [...prevMessages, sentMessage]);
-  //       setInputText('');
-  //     } catch (error) {
-  //       console.error('Failed to send message:', error);
-  //     }
-  //   }
-  // };
   const handleSend = async () => {
     if (!inputText.trim()) return;
 
-    const newMessage = {
+    const body = {
       message: inputText,
       chatroomId,
       senderId: user.id,
-      // 👇 add the nested object you know the UI expects
-      sender: { id: user.id, username: user.username },
     };
 
     try {
-      const saved = await sendMessage(newMessage);      // REST → DB
-      socket.current.emit('sendMessage', saved);        // WS → gateway
-      setMessages(prev => [...prev, saved]);            // optimistic
+      const saved = await sendMessage(body);
+      const payload = { ...saved, chatroomId };
+      socket.current.emit('sendMessage', payload);
+      setMessages(prev => [...prev, saved]);
       setInputText('');
     } catch (err) {
       console.error('Failed to send:', err);
     }
   };
   const normalise = (m: any): Message => {
-    if (m.sender) return m;                 // already good
+    if (m.sender) return m;
     return { ...m, sender: { id: m.senderId } };
   };
 
@@ -152,10 +156,12 @@ export default function ChatScreen() {
         <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
       </View>
       <FlatList
+        ref={flatListRef}
         data={messages}
         renderItem={renderMessage}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.messageList}
+        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
       />
       <View style={styles.inputContainer}>
         <TextInput
