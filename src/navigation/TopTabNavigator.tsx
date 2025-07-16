@@ -20,7 +20,6 @@ export default function TopTabNavigator({ route }: { route: any }) {
     <Tab.Navigator>
       <Tab.Screen name="Pairing" component={PairingScreen} initialParams={{ user }} />
       <Tab.Screen name="Chat" component={ChatScreen} initialParams={{ user }} />
-      <Tab.Screen name="Profile" component={ProfileScreen} initialParams={{ user }} />
     </Tab.Navigator>
   );
 }

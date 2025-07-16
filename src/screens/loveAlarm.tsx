@@ -142,7 +142,7 @@ const LoveAlarmScreen = ({ navigation }: { navigation: any }) => {
         <View style={styles.header}>
           <View style={{ width: 28 }} />
           <View />
-          <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+          <TouchableOpacity onPress={() => navigation.navigate('Profile', { user })}>
             <View style={styles.profileIconContainer}>
               <Icon name="person-outline" size={28} color="#fff" />
             </View>
