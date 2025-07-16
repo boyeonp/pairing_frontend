@@ -57,12 +57,22 @@ const PulsatingCircle = ({ delay, size, duration, finalOpacity }: { delay: numbe
 const LoveAlarmScreen = ({ navigation }: { navigation: any }) => {
   const [likes, setLikes] = useState(0);
   const [user, setUser] = useState<any>(null);
+  const [isFetchingUser, setIsFetchingUser] = useState(true);
 
   useEffect(() => {
     const fetchUser = async () => {
-      const storedUser = await AsyncStorage.getItem('user');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
+      try {
+        const storedUser = await AsyncStorage.getItem('user');
+        console.log('User data from AsyncStorage in LoveAlarmScreen:', storedUser); // <-- 콘솔 로그 추가
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+        } else {
+          console.log('No user data found in AsyncStorage.'); // <-- 데이터 없을 때 로그 추가
+        }
+      } catch (e) {
+        console.error("Failed to fetch user from AsyncStorage", e);
+      } finally {
+        setIsFetchingUser(false);
       }
     };
     fetchUser();
@@ -106,7 +116,7 @@ const LoveAlarmScreen = ({ navigation }: { navigation: any }) => {
       async (position) => {
         try {
           if (!user || !user.id) {
-            Alert.alert("Error", "User not found. Please log in again.");
+            Alert.alert("오류", "현재 사용자 정보를 불러올 수 없습니다. 다시 로그인해주세요.");
             return;
           }
           const data = await getLoveAlarmCount(user.id, {
@@ -140,7 +150,7 @@ const LoveAlarmScreen = ({ navigation }: { navigation: any }) => {
         </View>
 
         <View style={styles.mainContent}>
-          <TouchableOpacity onPress={handleFindCrushes} style={styles.gpsContainer}>
+          <TouchableOpacity onPress={handleFindCrushes} disabled={isFetchingUser} style={styles.gpsContainer}>
             <PulsatingCircle delay={0} size={heartSize * 2} duration={3000} finalOpacity={0.5} />
             <PulsatingCircle delay={1000} size={heartSize * 3} duration={3000} finalOpacity={0.4} />
             <PulsatingCircle delay={2000} size={heartSize * 4} duration={3000} finalOpacity={0.3} />
@@ -153,19 +163,11 @@ const LoveAlarmScreen = ({ navigation }: { navigation: any }) => {
               </Svg>
             </View>
           </TouchableOpacity>
-
           <Text style={styles.likesCount}>{likes}</Text>
           <Text style={styles.instructionText}>하트를 눌러 주변의 인연을 찾아보세요</Text>
         </View>
 
-        <View style={styles.footer}>
-          <View style={styles.bottomIconContainer}>
-            <View style={[styles.bottomIconCircle, { width: 80, height: 80, borderWidth: 1.5 }]} />
-            <View style={[styles.bottomIconCircle, { width: 60, height: 60, borderWidth: 1.5 }]} />
-            <View style={[styles.bottomIconCircle, { width: 40, height: 40, borderWidth: 1.5 }]} />
-            <Icon name="heart" size={18} color="#fff" />
-          </View>
-        </View>
+
       </SafeAreaView>
     </LinearGradient>
   );
@@ -234,17 +236,13 @@ const styles = StyleSheet.create({
     fontSize: 80,
     fontWeight: 'bold',
     color: '#fff',
-    marginTop: 20,
   },
   instructionText: {
     color: 'rgba(255, 255, 255, 0.8)',
     fontSize: 16,
     marginTop: 10,
     fontWeight: 'bold',
-  },
-  footer: {
-    alignItems: 'center',
-    paddingBottom: 30,
+    marginBottom: 40,
   },
   bottomIconContainer: {
     justifyContent: 'center',
