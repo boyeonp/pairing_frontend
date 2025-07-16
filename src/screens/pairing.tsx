@@ -52,7 +52,7 @@ export default function PairingScreen() {
 
   useEffect(() => {
     if (user) {
-      socket.current = io('http://localhost:3000', {
+      socket.current = io('http://172.20.12.170:80', {
         query: { userId: user.id },
       });
 
@@ -62,7 +62,8 @@ export default function PairingScreen() {
 
       socket.current.on('matchFound', (match: any) => {
         console.log('Match found:', match);
-        Alert.alert('Match Found!', `You have a match with ${match.user2.username}`, [
+        setIsAnimating(false);
+        Alert.alert('Match Found!', `You have a match!`, [
           { text: 'OK', onPress: () => navigation.navigate('Chat', { user, chatroomId: match.id }) },
         ]);
       });
