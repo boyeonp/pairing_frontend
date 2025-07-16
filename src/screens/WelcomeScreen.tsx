@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Alert, TextInput } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 // import GoogleSignInButton from './android_light_rd_SI.svg';
 // import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import axios from 'axios';
@@ -60,8 +61,16 @@ export default function WelcomeScreen({ navigation }: { navigation: any }) {
   const handleLogin = async () => {
     try {
       const response = await axios.post(`${API_URL}/auth/login`, { email, password });
-      navigation.navigate('Main', { user: response.data });
+      const user = response.data;
+      console.log('Login successful, user data from backend:', user); // <-- 콘솔 로그 추가
+      if (!user || !user.id) {
+        Alert.alert('Login Error', 'Received invalid user data from server.');
+        return;
+      }
+      await AsyncStorage.setItem('user', JSON.stringify(user));
+      navigation.navigate('Main', { user });
     } catch (error) {
+      console.error('Login API error:', error); // <-- 에러 로그 추가
       Alert.alert('Login Failed', 'Invalid credentials');
     }
   };
