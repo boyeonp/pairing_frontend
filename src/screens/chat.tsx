@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { getMessages, sendMessage } from '../services/chatApi';
 import { Message } from '../models/message';
 import { useRoute } from '@react-navigation/native';
+import io from 'socket.io-client';
 
 export default function ChatScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -12,6 +13,27 @@ export default function ChatScreen() {
   const route = useRoute();
   const { user, chatroomId } = route.params as { user: any; chatroomId: string };
   const hasMatch = !!chatroomId;
+  const socket = useRef<any>(null);
+
+  useEffect(() => {
+    if (chatroomId && user) {
+      socket.current = io('http://172.20.12.170:80', {
+        query: { userId: user.id, chatroomId: chatroomId },
+      });
+
+      socket.current.on('newMessage', (message: Message) => {
+        const newMessage = normalise(message)
+        console.log('New message received:', message);
+        if (newMessage.sender.id !== user.id) {
+          setMessages(prevMessages => [...prevMessages, newMessage]);
+        }
+      });
+
+      return () => {
+        socket.current.disconnect();
+      };
+    }
+  }, [chatroomId, user]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -42,47 +64,74 @@ export default function ChatScreen() {
     return `${h}:${m}:${s}`;
   };
 
+  // const handleSend = async () => {
+  //   if (inputText.trim().length > 0 && user && chatroomId) {
+  //     const newMessage = {
+  //       message: inputText,
+  //       senderId: user.id,
+  //       chatroomId: chatroomId,
+  //     };
+  //     try {
+  //       const sentMessage = await sendMessage(newMessage);
+  //       socket.current.emit('sendMessage', sentMessage);
+  //       setMessages(prevMessages => [...prevMessages, sentMessage]);
+  //       setInputText('');
+  //     } catch (error) {
+  //       console.error('Failed to send message:', error);
+  //     }
+  //   }
+  // };
   const handleSend = async () => {
-    if (inputText.trim().length > 0 && user && chatroomId) {
-      const newMessage = {
-        message: inputText,
-        senderId: user.id,
-        chatroomId: chatroomId,
-      };
-      try {
-        const sentMessage = await sendMessage(newMessage);
-        setMessages(prevMessages => [...prevMessages, sentMessage]);
-        setInputText('');
-      } catch (error) {
-        console.error('Failed to send message:', error);
-      }
+    if (!inputText.trim()) return;
+
+    const newMessage = {
+      message: inputText,
+      chatroomId,
+      senderId: user.id,
+      // 👇 add the nested object you know the UI expects
+      sender: { id: user.id, username: user.username },
+    };
+
+    try {
+      const saved = await sendMessage(newMessage);      // REST → DB
+      socket.current.emit('sendMessage', saved);        // WS → gateway
+      setMessages(prev => [...prev, saved]);            // optimistic
+      setInputText('');
+    } catch (err) {
+      console.error('Failed to send:', err);
     }
   };
+  const normalise = (m: any): Message => {
+    if (m.sender) return m;                 // already good
+    return { ...m, sender: { id: m.senderId } };
+  };
+
+
 
   const shouldShowTime = (item: Message, index: number) => {
     if (index === 0) return true;
     const prevMessage = messages[index - 1];
-    return new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) !== new Date(prevMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || item.user.id !== prevMessage.user.id;
+    return new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) !== new Date(prevMessage.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) || item.sender.id !== prevMessage.sender.id;
   };
 
   const renderMessage = ({ item, index }: { item: Message, index: number }) => {
     if (!user) {
       return null;
     }
-    const isMe = item.user.id === user.id;
+    const isMe = item.sender.id === user.id;
     return (
       <View style={[styles.messageContainer, isMe ? styles.myMessageContainer : styles.otherMessageContainer]}>
         {isMe && (
           <View style={styles.messageInfo}>
-            {shouldShowTime(item, index) && <Text style={styles.timeText}>{new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>}
+            {shouldShowTime(item, index) && <Text style={styles.timeText}>{new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>}
           </View>
         )}
         <View style={[styles.messageBubble, isMe ? styles.myMessageBubble : styles.otherMessageBubble]}>
-          <Text style={isMe ? styles.myMessageText : styles.otherMessageText}>{item.text}</Text>
+          <Text style={isMe ? styles.myMessageText : styles.otherMessageText}>{item.message}</Text>
         </View>
         {!isMe && shouldShowTime(item, index) && (
           <View style={styles.messageInfo}>
-            <Text style={styles.timeText}>{new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+            <Text style={styles.timeText}>{new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
           </View>
         )}
       </View>
