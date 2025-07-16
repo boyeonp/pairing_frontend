@@ -21,11 +21,32 @@ export default function ChatScreen() {
   useEffect(() => {
     if (chatroomId && user) {
       socket.current = io('http://172.20.12.170:80', {
-        query: { userId: user.id },      // no chatroomId here!
+        query: { userId: user.id },
         transports: ['websocket'],
       });
 
-      const doJoin = () => socket.current?.emit('joinRoom', { chatroomId });
+      const setupChat = async () => {
+        socket.current?.emit('joinRoom', { chatroomId });
+
+        try {
+          const fetchedMessages = await getMessages(chatroomId);
+          if (fetchedMessages.length === 0 && user.comment) {
+            const body = {
+              message: user.comment,
+              chatroomId,
+              senderId: user.id,
+            };
+            const saved = await sendMessage(body);
+            const payload = { ...saved, chatroomId };
+            socket.current.emit('sendMessage', payload);
+            setMessages([saved]);
+          } else {
+            setMessages(fetchedMessages);
+          }
+        } catch (error) {
+          console.error('Failed to fetch initial messages or send first message:', error);
+        }
+      };
 
       if (socket.current.connected) {
         doJoin();
@@ -34,11 +55,10 @@ export default function ChatScreen() {
       }
 
       socket.current.on('newMessage', (raw: any) => {
-        const newMessage = normalise(raw)
+        const newMessage = normalise(raw);
         if (newMessage.sender.id === user.id) return;
         setMessages(prev =>
-          prev.some(m => m.id === newMessage.id) ? prev         // 이미 있으면 건너뜀
-                                          : [...prev, newMessage]
+          prev.some(m => m.id === newMessage.id) ? prev : [...prev, newMessage]
         );
       });
 
@@ -257,7 +277,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 0,
   },
   otherMessageBubble: {
-    backgroundColor: '#e0e0e0',
+    backgroundColor: '#fff',
     borderBottomLeftRadius: 0,
   },
   myMessageText: {
